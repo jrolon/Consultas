@@ -1,41 +1,54 @@
-'use strict';
-
 const express = require('express');
 const bodyParser = require('body-parser');
-const cors = require('cors');
-const servicesLogin = require('./app/login/routers');
 const firebase = require('firebase');
+// Firebase App (the core Firebase SDK) is always required and
+// must be listed before other Firebase SDKs
+
+// Add the Firebase products that you want to use
+require('firebase/firestore');
 
 const config = require('./config');
+
 firebase.initializeApp(config.firebaseConfig);
-
- const auth = firebase.auth();
-
-
-
+const firebaseAuth = firebase;
 const app = express();
 
 app.use(bodyParser.json());
 app.listen(3000);
 
 
-
 app.get('/', (req, res) => {
-  res.status(200).send({message:'OK'});
+  res.status(200)
+    .send({ message: 'OK' });
 });
 
 
-app.post('/login', (req, res)=> {
+app.post('/login', (req, res) => {
   console.log(req.body);
-  if(!req.body.email || !req.body.password) {
-    res.status(400).send({message: 'Error in the params'});
+  if (!req.body.email || !req.body.password) {
+    res.status(400)
+      .send({ message: 'Error in the params' });
   } else {
-     const token = servicesLogin.loging(req.body.email, req.body.password);
-     console.log(token);
-   
+    firebaseAuth.auth()
+      .signInWithEmailAndPassword(req.body.email, req.body.password)
+      .then((response) => {
+        response.user.getIdTokenResult()
+          .then((value) => {
+            res.status(201)
+              .send({ token: value.token, expiret: value.expirationTime});
+          });
+
+      })
+      .catch((err) => {
+        // return JSON.stringify(err);
+      });
   }
-  
 });
-module.exports={auth}
 
-
+app.get('/saveConductores', (req, res) => {
+  firebase.database()
+    .ref()
+    .once('companies', a => {
+      console.log(a);
+    });
+});
