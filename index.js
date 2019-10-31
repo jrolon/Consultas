@@ -1,6 +1,7 @@
 const express = require('express');
 const bodyParser = require('body-parser');
 const firebase = require('firebase');
+const admin = require('firebase-admin');
 // Firebase App (the core Firebase SDK) is always required and
 // must be listed before other Firebase SDKs
 
@@ -9,6 +10,7 @@ require('firebase/firestore');
 
 const config = require('./config');
 
+admin.initializeApp(config.firebaseConfig);
 firebase.initializeApp(config.firebaseConfig);
 const firebaseAuth = firebase;
 const app = express();
@@ -35,7 +37,10 @@ app.post('/login', (req, res) => {
         response.user.getIdTokenResult()
           .then((value) => {
             res.status(201)
-              .send({ token: value.token, expiret: value.expirationTime});
+              .send({
+                token: value.token,
+                expiret: value.expirationTime
+              });
           });
 
       })
@@ -45,10 +50,17 @@ app.post('/login', (req, res) => {
   }
 });
 
-app.get('/saveConductores', (req, res) => {
-  firebase.database()
-    .ref()
-    .once('companies', a => {
-      console.log(a);
+app.post('/saveConductores', (req, res) => {
+  admin.auth()
+    .verifyIdToken(req.body.token)
+    .then((val) => {
+      const referencia = admin.database.ref('companies');
+      console.log(referencia);
+    })
+    .catch((err) => {
+      res
+        .status(404)
+        .send({ message: 'error realizando la consulta' });
     });
+
 });
